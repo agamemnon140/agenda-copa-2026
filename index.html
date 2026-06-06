@@ -56,6 +56,8 @@
   .nav button:hover{border-color:var(--grass);color:var(--grass)}
   .nav button:active{transform:scale(.93)}
   .nav button:disabled{opacity:.3;cursor:default;border-color:var(--line);color:var(--dm)}
+  .nav .zlbl{width:auto;min-width:50px;padding:0 9px;font-family:'Sora';font-weight:600;font-size:12px;letter-spacing:0}
+  .nav .zlbl:hover{color:var(--grass);border-color:var(--grass)}
   .winlbl{text-align:center;margin-top:8px;font-family:'Oswald';font-weight:600;font-size:13px;
     letter-spacing:.04em;color:var(--gold)}
   .brtoggle{font-family:'Oswald';font-weight:600;font-size:13px;letter-spacing:.04em;
@@ -180,6 +182,11 @@
       <button id="nd" title="Próximo dia">›</button>
       <button id="nw" title="Próxima semana">»</button>
     </span>
+    <span class="nav" role="group" aria-label="Tamanho dos ícones">
+      <button id="zout" title="Diminuir os ícones" aria-label="Diminuir o tamanho dos ícones">A−</button>
+      <button id="zlbl" class="zlbl" title="Restaurar o tamanho padrão" aria-label="Tamanho atual — toque para restaurar o padrão">100%</button>
+      <button id="zin" title="Aumentar os ícones" aria-label="Aumentar o tamanho dos ícones">A+</button>
+    </span>
   </div>
   <div class="winlbl" id="winlbl"></div>
   <div class="legend" id="legend">
@@ -267,6 +274,10 @@ const ALLDAYS=(()=>{const out=[];const d=dObj('11/Jun');d.setDate(d.getDate()-d.
 const gamesByDay={}; games.forEach(g=>{(gamesByDay[g.dDate]=gamesByDay[g.dDate]||[]).push(g);});
 
 let onlyBR=false, selNum=null;
+/* zoom de acessibilidade: amplia ícones, textos e colunas de forma proporcional */
+const ZOOMS=[1,1.25,1.5,1.75,2,2.5];
+let zoomIdx=0;
+try{const z=+localStorage.getItem('copa-zoom'); if(z>=0&&z<ZOOMS.length) zoomIdx=z;}catch(e){}
 const cal=document.getElementById('cal'), detail=document.getElementById('detail'), scroll=document.getElementById('scroll');
 const px=v=>v+'px';
 const CSSVAR=k=>parseFloat(getComputedStyle(document.documentElement).getPropertyValue(k));
@@ -285,12 +296,16 @@ function showDetail(g){
     ${tag} · 📍 ${g.city} · <span style="opacity:.7">M${g.num}</span>${brNote}`;
 }
 
-let winStart=0; const WIN=7;                  // janela de 7 dias (semana dom→sáb)
+let winStart=0; let WIN=7;                    // janela de dias (7 no zoom padrão, menos ao ampliar)
 
 function render(){
-  const avail=scroll.clientWidth;
+  const zoom=ZOOMS[zoomIdx];
+  /* mede em "unidades de zoom": o CSS zoom amplia tudo de volta para a largura real */
+  const avail=scroll.clientWidth/zoom;
+  WIN=Math.max(2,Math.round(7/zoom));         // ao ampliar, mostra menos dias → colunas mais largas
   const compact=avail<560;
   cal.className=compact?'compact':'';
+  cal.style.zoom=zoom;
   const gut=compact?32:54, slotH=compact?12.5:14, sc=slotH/30;
   document.documentElement.style.setProperty('--gut',gut+'px');
   document.documentElement.style.setProperty('--slotH',slotH+'px');
@@ -400,7 +415,20 @@ function render(){
 /* navegação por dias/semana */
 const bPW=document.getElementById('pw'),bPD=document.getElementById('pd'),bND=document.getElementById('nd'),bNW=document.getElementById('nw'),winlbl=document.getElementById('winlbl');
 function move(n){winStart=Math.max(0,Math.min(winStart+n,Math.max(0,ALLDAYS.length-1)));render();}
-bPW.onclick=()=>move(-7); bPD.onclick=()=>move(-1); bND.onclick=()=>move(1); bNW.onclick=()=>move(7);
+bPW.onclick=()=>move(-WIN); bPD.onclick=()=>move(-1); bND.onclick=()=>move(1); bNW.onclick=()=>move(WIN);
+
+/* controle de zoom (acessibilidade) */
+const zin=document.getElementById('zin'),zout=document.getElementById('zout'),zlbl=document.getElementById('zlbl');
+function setZoom(i){
+  zoomIdx=Math.max(0,Math.min(ZOOMS.length-1,i));
+  try{localStorage.setItem('copa-zoom',zoomIdx);}catch(e){}
+  zlbl.textContent=Math.round(ZOOMS[zoomIdx]*100)+'%';
+  zout.disabled=zoomIdx===0; zin.disabled=zoomIdx===ZOOMS.length-1;
+  render();
+}
+zin.onclick=()=>setZoom(zoomIdx+1);
+zout.onclick=()=>setZoom(zoomIdx-1);
+zlbl.onclick=()=>setZoom(0);
 
 const brBtn=document.getElementById('brToggle'), legend=document.getElementById('legend');
 brBtn.onclick=()=>{
@@ -412,7 +440,7 @@ brBtn.onclick=()=>{
   render();
 };
 window.addEventListener('resize',()=>{render();});
-render();
+setZoom(zoomIdx);   // aplica a preferência salva e desenha
 </script>
 </body>
 </html>
