@@ -1,33 +1,20 @@
 const fs = require('fs');
 const path = require('path');
 
-const S = 512;                 // canvas
-const CX = 256, CY = 232, R = 140;
+const S = 512;
 
-const pentagon = (cx, cy, r, rot = 0) =>
-  Array.from({ length: 5 }, (_, i) => {
-    const a = (-90 + rot + i * 72) * Math.PI / 180;
-    return [cx + r * Math.cos(a), cy + r * Math.sin(a)];
-  });
+// --- Calendar geometry -----------------------------------------------------
+const CARD_X = 112, CARD_Y = 150, CARD_W = 288, CARD_H = 262, CARD_R = 30;
+const CARD_RIGHT = CARD_X + CARD_W;          // 400
+const HEADER_H = 60;
+const HEADER_BOTTOM = CARD_Y + HEADER_H;     // 210
 
-const poly = pts => pts.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-
-const central = pentagon(CX, CY, 47);
-
-const seamPts = [], outer = [];
-for (let i = 0; i < 5; i++) {
-  const a = (-90 + i * 72) * Math.PI / 180;
-  seamPts.push([CX + 128 * Math.cos(a), CY + 128 * Math.sin(a)]);
-  const ox = CX + 150 * Math.cos(a), oy = CY + 150 * Math.sin(a);
-  outer.push(pentagon(ox, oy, 40, a * 180 / Math.PI + 90 + 36));
-}
-
-const seams = central.map(([cx, cy], i) => {
-  const [sx, sy] = seamPts[i];
-  return `<line x1="${cx.toFixed(1)}" y1="${cy.toFixed(1)}" x2="${sx.toFixed(1)}" y2="${sy.toFixed(1)}" stroke="#0b1f17" stroke-width="6" stroke-linecap="round"/>`;
-}).join('');
-
-const outerPolys = outer.map(p => `<polygon points="${poly(p)}" fill="#0b1f17"/>`).join('');
+// Faint day-grid dots behind the trophy (reads as a calendar grid)
+const cols = [150, 203, 256, 309, 362];
+const rows = [240, 290, 340, 388];
+const dots = rows
+  .flatMap(y => cols.map(x => `<circle cx="${x}" cy="${y}" r="5" fill="#cfd8d3" fill-opacity="0.45"/>`))
+  .join('\n    ');
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" width="${S}" height="${S}">
   <defs>
@@ -40,12 +27,23 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" wid
       <stop offset="0" stop-color="#1ad97a" stop-opacity="0.45"/>
       <stop offset="1" stop-color="#1ad97a" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="ball" cx="0.4" cy="0.34" r="0.75">
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="0.7" stop-color="#eef3f1"/>
-      <stop offset="1" stop-color="#c4d0cb"/>
-    </radialGradient>
-    <clipPath id="ballClip"><circle cx="${CX}" cy="${CY}" r="${R}"/></clipPath>
+      <stop offset="1" stop-color="#e9efec"/>
+    </linearGradient>
+    <linearGradient id="header" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#13a85c"/>
+      <stop offset="1" stop-color="#0a7a40"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe7a3"/>
+      <stop offset="0.5" stop-color="#f5c84a"/>
+      <stop offset="1" stop-color="#c5870f"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3d579"/>
+      <stop offset="1" stop-color="#bd8e22"/>
+    </linearGradient>
   </defs>
 
   <rect width="${S}" height="${S}" fill="url(#bg)"/>
@@ -53,18 +51,50 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${S} ${S}" wid
   <rect x="14" y="14" width="${S - 28}" height="${S - 28}" rx="96" ry="96"
         fill="none" stroke="#f5c84a" stroke-opacity="0.22" stroke-width="3"/>
 
-  <circle cx="${CX}" cy="${CY}" r="${R}" fill="url(#ball)" stroke="#0b1f17" stroke-width="5"/>
-  <g clip-path="url(#ballClip)">
-    ${outerPolys}
-    ${seams}
-    <polygon points="${poly(central)}" fill="#0b1f17"/>
-  </g>
-  <circle cx="${CX}" cy="${CY}" r="${R}" fill="none" stroke="#ffffff" stroke-opacity="0.15" stroke-width="2"/>
+  <!-- binder rings -->
+  <rect x="172" y="136" width="16" height="34" rx="8" fill="none" stroke="url(#ring)" stroke-width="7"/>
+  <rect x="324" y="136" width="16" height="34" rx="8" fill="none" stroke="url(#ring)" stroke-width="7"/>
 
-  <text x="${CX}" y="466" text-anchor="middle"
+  <!-- calendar card -->
+  <rect x="${CARD_X}" y="${CARD_Y}" width="${CARD_W}" height="${CARD_H}" rx="${CARD_R}" ry="${CARD_R}"
+        fill="url(#card)" stroke="#0b1f17" stroke-width="4"/>
+
+  <!-- green header band (top corners rounded) -->
+  <path d="M ${CARD_X},${HEADER_BOTTOM}
+           L ${CARD_X},${CARD_Y + CARD_R}
+           Q ${CARD_X},${CARD_Y} ${CARD_X + CARD_R},${CARD_Y}
+           L ${CARD_RIGHT - CARD_R},${CARD_Y}
+           Q ${CARD_RIGHT},${CARD_Y} ${CARD_RIGHT},${CARD_Y + CARD_R}
+           L ${CARD_RIGHT},${HEADER_BOTTOM} Z"
+        fill="url(#header)"/>
+  <text x="256" y="${CARD_Y + 43}" text-anchor="middle"
         font-family="'Arial Black','Segoe UI',sans-serif" font-weight="900"
-        font-size="92" letter-spacing="2"
-        fill="#f5c84a" stroke="#7a5a10" stroke-width="1.5">2026</text>
+        font-size="40" letter-spacing="4" fill="#ffffff">2026</text>
+
+  <!-- faint day grid -->
+  <g>
+    ${dots}
+  </g>
+
+  <!-- golden trophy -->
+  <g stroke="#6e4e0c" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- handles -->
+    <path d="M212,244 C180,242 178,290 210,298" fill="none" stroke-width="9"/>
+    <path d="M300,244 C332,242 334,290 302,298" fill="none" stroke-width="9"/>
+    <!-- bowl -->
+    <path d="M212,236 L300,236 C300,286 280,326 256,326 C232,326 212,286 212,236 Z" fill="url(#gold)"/>
+    <!-- neck -->
+    <polygon points="248,326 264,326 268,346 244,346" fill="url(#gold)"/>
+    <!-- knob -->
+    <ellipse cx="256" cy="348" rx="20" ry="7" fill="url(#gold)"/>
+    <!-- pedestal -->
+    <polygon points="240,352 272,352 286,378 226,378" fill="url(#gold)"/>
+    <!-- base slab -->
+    <rect x="220" y="378" width="72" height="14" rx="4" fill="url(#gold)"/>
+  </g>
+  <!-- bowl highlight -->
+  <path d="M224,244 C226,272 236,300 252,312" fill="none"
+        stroke="#fff6d8" stroke-opacity="0.6" stroke-width="5" stroke-linecap="round"/>
 </svg>`;
 
 const out = path.join(__dirname, 'icon.svg');
