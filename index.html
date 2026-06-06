@@ -276,6 +276,7 @@ const gamesByDay={}; games.forEach(g=>{(gamesByDay[g.dDate]=gamesByDay[g.dDate]|
 let onlyBR=false, selNum=null;
 /* zoom de acessibilidade: amplia ícones, textos e colunas de forma proporcional */
 const ZOOMS=[1,1.25,1.5,1.75,2,2.5];
+const WINS =[7,  4,  3,   2,  2,  1];   // dias visíveis por nível: menos dias = colunas mais largas
 let zoomIdx=0;
 try{const z=+localStorage.getItem('copa-zoom'); if(z>=0&&z<ZOOMS.length) zoomIdx=z;}catch(e){}
 const cal=document.getElementById('cal'), detail=document.getElementById('detail'), scroll=document.getElementById('scroll');
@@ -302,7 +303,7 @@ function render(){
   const zoom=ZOOMS[zoomIdx];
   /* mede em "unidades de zoom": o CSS zoom amplia tudo de volta para a largura real */
   const avail=scroll.clientWidth/zoom;
-  WIN=Math.max(2,Math.round(7/zoom));         // ao ampliar, mostra menos dias → colunas mais largas
+  WIN=WINS[zoomIdx];                          // ao ampliar, mostra menos dias → colunas mais largas
   const compact=avail<560;
   cal.className=compact?'compact':'';
   cal.style.zoom=zoom;
