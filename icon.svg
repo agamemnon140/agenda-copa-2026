@@ -9,12 +9,23 @@
       <stop offset="0" stop-color="#1ad97a" stop-opacity="0.45"/>
       <stop offset="1" stop-color="#1ad97a" stop-opacity="0"/>
     </radialGradient>
-    <radialGradient id="ball" cx="0.4" cy="0.34" r="0.75">
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="0.7" stop-color="#eef3f1"/>
-      <stop offset="1" stop-color="#c4d0cb"/>
-    </radialGradient>
-    <clipPath id="ballClip"><circle cx="256" cy="232" r="140"/></clipPath>
+      <stop offset="1" stop-color="#e9efec"/>
+    </linearGradient>
+    <linearGradient id="header" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#13a85c"/>
+      <stop offset="1" stop-color="#0a7a40"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffe7a3"/>
+      <stop offset="0.5" stop-color="#f5c84a"/>
+      <stop offset="1" stop-color="#c5870f"/>
+    </linearGradient>
+    <linearGradient id="ring" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3d579"/>
+      <stop offset="1" stop-color="#bd8e22"/>
+    </linearGradient>
   </defs>
 
   <rect width="512" height="512" fill="url(#bg)"/>
@@ -22,16 +33,67 @@
   <rect x="14" y="14" width="484" height="484" rx="96" ry="96"
         fill="none" stroke="#f5c84a" stroke-opacity="0.22" stroke-width="3"/>
 
-  <circle cx="256" cy="232" r="140" fill="url(#ball)" stroke="#0b1f17" stroke-width="5"/>
-  <g clip-path="url(#ballClip)">
-    <polygon points="279.5,49.6 294.0,94.4 256.0,122.0 218.0,94.4 232.5,49.6" fill="#0b1f17"/><polygon points="436.7,198.0 398.7,225.6 360.6,198.0 375.1,153.3 422.2,153.3" fill="#0b1f17"/><polygon points="344.2,393.4 306.1,365.7 320.7,321.0 367.7,321.0 382.2,365.7" fill="#0b1f17"/><polygon points="129.8,365.7 144.3,321.0 191.3,321.0 205.9,365.7 167.8,393.4" fill="#0b1f17"/><polygon points="89.8,153.3 136.9,153.3 151.4,198.0 113.3,225.6 75.3,198.0" fill="#0b1f17"/>
-    <line x1="256.0" y1="185.0" x2="256.0" y2="104.0" stroke="#0b1f17" stroke-width="6" stroke-linecap="round"/><line x1="300.7" y1="217.5" x2="377.7" y2="192.4" stroke="#0b1f17" stroke-width="6" stroke-linecap="round"/><line x1="283.6" y1="270.0" x2="331.2" y2="335.6" stroke="#0b1f17" stroke-width="6" stroke-linecap="round"/><line x1="228.4" y1="270.0" x2="180.8" y2="335.6" stroke="#0b1f17" stroke-width="6" stroke-linecap="round"/><line x1="211.3" y1="217.5" x2="134.3" y2="192.4" stroke="#0b1f17" stroke-width="6" stroke-linecap="round"/>
-    <polygon points="256.0,185.0 300.7,217.5 283.6,270.0 228.4,270.0 211.3,217.5" fill="#0b1f17"/>
-  </g>
-  <circle cx="256" cy="232" r="140" fill="none" stroke="#ffffff" stroke-opacity="0.15" stroke-width="2"/>
+  <!-- binder rings -->
+  <rect x="172" y="136" width="16" height="34" rx="8" fill="none" stroke="url(#ring)" stroke-width="7"/>
+  <rect x="324" y="136" width="16" height="34" rx="8" fill="none" stroke="url(#ring)" stroke-width="7"/>
 
-  <text x="256" y="466" text-anchor="middle"
+  <!-- calendar card -->
+  <rect x="112" y="150" width="288" height="262" rx="30" ry="30"
+        fill="url(#card)" stroke="#0b1f17" stroke-width="4"/>
+
+  <!-- green header band (top corners rounded) -->
+  <path d="M 112,210
+           L 112,180
+           Q 112,150 142,150
+           L 370,150
+           Q 400,150 400,180
+           L 400,210 Z"
+        fill="url(#header)"/>
+  <text x="256" y="193" text-anchor="middle"
         font-family="'Arial Black','Segoe UI',sans-serif" font-weight="900"
-        font-size="92" letter-spacing="2"
-        fill="#f5c84a" stroke="#7a5a10" stroke-width="1.5">2026</text>
+        font-size="40" letter-spacing="4" fill="#ffffff">2026</text>
+
+  <!-- faint day grid -->
+  <g>
+    <circle cx="150" cy="240" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="203" cy="240" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="256" cy="240" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="309" cy="240" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="362" cy="240" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="150" cy="290" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="203" cy="290" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="256" cy="290" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="309" cy="290" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="362" cy="290" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="150" cy="340" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="203" cy="340" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="256" cy="340" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="309" cy="340" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="362" cy="340" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="150" cy="388" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="203" cy="388" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="256" cy="388" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="309" cy="388" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+    <circle cx="362" cy="388" r="5" fill="#cfd8d3" fill-opacity="0.45"/>
+  </g>
+
+  <!-- golden trophy -->
+  <g stroke="#6e4e0c" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <!-- handles -->
+    <path d="M212,244 C180,242 178,290 210,298" fill="none" stroke-width="9"/>
+    <path d="M300,244 C332,242 334,290 302,298" fill="none" stroke-width="9"/>
+    <!-- bowl -->
+    <path d="M212,236 L300,236 C300,286 280,326 256,326 C232,326 212,286 212,236 Z" fill="url(#gold)"/>
+    <!-- neck -->
+    <polygon points="248,326 264,326 268,346 244,346" fill="url(#gold)"/>
+    <!-- knob -->
+    <ellipse cx="256" cy="348" rx="20" ry="7" fill="url(#gold)"/>
+    <!-- pedestal -->
+    <polygon points="240,352 272,352 286,378 226,378" fill="url(#gold)"/>
+    <!-- base slab -->
+    <rect x="220" y="378" width="72" height="14" rx="4" fill="url(#gold)"/>
+  </g>
+  <!-- bowl highlight -->
+  <path d="M224,244 C226,272 236,300 252,312" fill="none"
+        stroke="#fff6d8" stroke-opacity="0.6" stroke-width="5" stroke-linecap="round"/>
 </svg>
