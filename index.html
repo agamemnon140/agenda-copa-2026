@@ -172,10 +172,11 @@
   <div class="wrap">
     <div class="kicker">FIFA World Cup</div>
     <h1>Agenda <span class="yr">2026</span></h1>
-    <div class="sub">Cada bloco = duração do jogo · horários de <b>Brasília (BRT)</b></div>
+    <div class="sub">Cada bloco = duração do jogo · horários de <b id="tzName">Brasília (BRT)</b></div>
   </div>
   <div class="controls">
     <button id="brToggle" class="brtoggle">🇧🇷 Só jogos do Brasil</button>
+    <button id="tzToggle" class="brtoggle" title="Alternar entre horário de Brasília e da Holanda">🇳🇱 Horário da Holanda</button>
     <span class="nav">
       <button id="pw" title="Semana anterior">«</button>
       <button id="pd" title="Dia anterior">‹</button>
@@ -252,9 +253,11 @@ for(let mn=73;mn<=104;mn++){const sp=KO_SPEC[mn];
 const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m};
 const addDays=(dStr,n)=>{const d=dObj(dStr);d.setDate(d.getDate()+n);
   const mo=Object.keys(MONTHS).find(k=>MONTHS[k]===d.getMonth());return d.getDate()+'/'+mo;};
-// jogos de madrugada (antes do meio-dia) vão para o FIM da coluna do dia anterior
-games.forEach(g=>{const m=toMin(g.brt);
-  if(m<720){g.dDate=addDays(g.date,-1);g.dMin=m+1440;} else {g.dDate=g.date;g.dMin=m;}});
+const fmtHM=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+/* fuso horário: Brasília (padrão) ou Holanda (CEST, +5h durante a Copa) */
+const TZS={BRT:{off:0,abbr:'BRT',label:'Brasília (BRT)'},NL:{off:300,abbr:'CEST',label:'Holanda (CEST)'}};
+let tzKey='BRT';
+try{const t=localStorage.getItem('copa-tz'); if(t&&TZS[t]) tzKey=t;}catch(e){}
 const DSTART=780;                            // 13:00 = início do "dia de jogos"
 const startMin=g=>g.dMin;                    // minuto na timeline (madrugada = 24h+)
 const durMin=g=>g.ko?180:120;                // grupos 2h, mata-mata 3h
@@ -271,7 +274,22 @@ const brProb=g=>BR_PROB[g.num]||0;
 const fmtDay=d=>d.getDate()+'/'+Object.keys(MONTHS).find(k=>MONTHS[k]===d.getMonth());
 const ALLDAYS=(()=>{const out=[];const d=dObj('11/Jun');d.setDate(d.getDate()-d.getDay());const end=dObj('19/Jul');
   while(d<=end){out.push(fmtDay(d));d.setDate(d.getDate()+1);}return out;})();
-const gamesByDay={}; games.forEach(g=>{(gamesByDay[g.dDate]=gamesByDay[g.dDate]||[]).push(g);});
+const gamesByDay={};
+/* recalcula horário exibido, data e coluna de cada jogo conforme o fuso escolhido
+   (jogos antes do meio-dia vão para o FIM da coluna do dia anterior) */
+function recompute(){
+  const off=TZS[tzKey].off;
+  games.forEach(g=>{
+    const abs=toMin(g.brt)+off;
+    const locDate=addDays(g.date,Math.floor(abs/1440));
+    const locMin=((abs%1440)+1440)%1440;
+    g.disp=fmtHM(locMin); g.locDate=locDate;
+    if(locMin<720){g.dDate=addDays(locDate,-1);g.dMin=locMin+1440;}
+    else{g.dDate=locDate;g.dMin=locMin;}
+  });
+  for(const k in gamesByDay) delete gamesByDay[k];
+  games.forEach(g=>{(gamesByDay[g.dDate]=gamesByDay[g.dDate]||[]).push(g);});
+}
 
 let onlyBR=false, selNum=null;
 /* zoom de acessibilidade: amplia ícones, textos e colunas de forma proporcional */
@@ -288,11 +306,11 @@ function showDetail(g){
   const tA=g.ko?g.home.label:nm(g.home.team), tB=g.ko?g.away.label:nm(g.away.team);
   const fA=g.ko?'':fl(g.home.team)+' ', fB=g.ko?'':' '+fl(g.away.team);
   const tag=g.ko?PHLONG[g.phase]:'Grupo '+g.group;
-  const[dd,mo]=g.date.split('/'); const wd=DOW[dObj(g.date).getDay()];
+  const[dd,mo]=g.locDate.split('/'); const wd=DOW[dObj(g.locDate).getDay()];
   const endM=g.dMin+durMin(g); const eh=String(Math.floor(endM/60)%24).padStart(2,'0')+':'+String(endM%60).padStart(2,'0');
   const p=brProb(g); const brNote=(onlyBR&&p>0&&p<1)?` · 🇧🇷 <b style="color:var(--gold)">${(p*100).toFixed(0)}%</b> de chance`:'';
   detail.className='detail live';
-  detail.innerHTML=`<span class="d-time">${g.brt}–${eh}</span> · ${wd} ${dd}/${mo} ·
+  detail.innerHTML=`<span class="d-time">${g.disp}–${eh}</span> · ${wd} ${dd}/${mo} ·
     <span class="d-vs">${fA}<b>${tA}</b> × <b>${tB}</b>${fB}</span> ·
     ${tag} · 📍 ${g.city} · <span style="opacity:.7">M${g.num}</span>${brNote}`;
 }
@@ -322,12 +340,13 @@ function render(){
   const dayGames=d=>{const gs=gamesByDay[d]||[]; return onlyBR?gs.filter(g=>brProb(g)>0):gs;};
   const shown=vis.flatMap(dayGames);
 
-  /* eixo de tempo: 13:00 → fim (madrugada já foi para o dia anterior) */
-  const dayEnd=shown.length?Math.max(...shown.map(g=>g.dMin+durMin(g))):23*60;
-  const mapMin=m=>(m-DSTART)*sc;
-  const planeH=Math.max(60,(dayEnd-DSTART)*sc);
+  /* eixo de tempo: do 1º jogo ao fim (início dinâmico p/ acomodar fusos diferentes) */
+  const dayStart=shown.length?Math.floor(Math.min(...shown.map(g=>g.dMin))/60)*60:DSTART;
+  const dayEnd=shown.length?Math.max(...shown.map(g=>g.dMin+durMin(g))):dayStart+600;
+  const mapMin=m=>(m-dayStart)*sc;
+  const planeH=Math.max(60,(dayEnd-dayStart)*sc);
   const planeW=vis.length*colW;
-  const ticks=[]; for(let hm=DSTART;hm<=dayEnd;hm+=60) ticks.push(hm);
+  const ticks=[]; for(let hm=dayStart;hm<=dayEnd;hm+=60) ticks.push(hm);
 
   /* rodada/fase por dia (todos os jogos do dia definem a fase) + runs contíguos */
   const dayStage={}; vis.forEach(d=>{const gs=gamesByDay[d]||[]; dayStage[d]=gs.length?stageOf(gs[0]):{key:'none',label:'',cls:'none'};});
@@ -347,7 +366,7 @@ function render(){
 
   /* HEAD */
   const head=document.createElement('div');head.className='head';
-  const hc=document.createElement('div');hc.className='hcorner';hc.textContent='BRT';
+  const hc=document.createElement('div');hc.className='hcorner';hc.textContent=TZS[tzKey].abbr;
   head.appendChild(hc);
   const hbody=document.createElement('div');hbody.className='hbody';hbody.style.width=px(planeW);
   const srow=document.createElement('div');srow.className='stagerow';
@@ -400,11 +419,11 @@ function render(){
       }else if(g.ko){
         b.innerHTML=`<span class="bph">${ph}</span><span class="bm">${shortSide(g.home)} × ${shortSide(g.away)}</span><span class="bc">📍 ${g.city}</span>`;
       }else{
-        b.innerHTML=`<span class="bt">${g.brt}</span><span class="bf">${fl(g.home.team)} ${fl(g.away.team)}</span><span class="bgp"><span class="gfull">Grupo </span>${g.group}</span>`;
+        b.innerHTML=`<span class="bt">${g.disp}</span><span class="bf">${fl(g.home.team)} ${fl(g.away.team)}</span><span class="bgp"><span class="gfull">Grupo </span>${g.group}</span>`;
       }
       b.title=g.ko
-        ? `${g.brt} · ${g.home.label} × ${g.away.label} · ${PHLONG[g.phase]} · ${g.city}`+(p>0&&p<1?` · Brasil ${(p*100).toFixed(0)}%`:'')
-        : `${g.brt} · ${nm(g.home.team)} × ${nm(g.away.team)} · Grupo ${g.group} · ${g.city}`;
+        ? `${g.disp} · ${g.home.label} × ${g.away.label} · ${PHLONG[g.phase]} · ${g.city}`+(p>0&&p<1?` · Brasil ${(p*100).toFixed(0)}%`:'')
+        : `${g.disp} · ${nm(g.home.team)} × ${nm(g.away.team)} · Grupo ${g.group} · ${g.city}`;
       b.addEventListener('click',()=>{plane.querySelectorAll('.bk.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');showDetail(g);});
       plane.appendChild(b);
     });
@@ -440,8 +459,33 @@ brBtn.onclick=()=>{
   legend.style.display=onlyBR?'none':'flex';
   render();
 };
+/* fuso horário (Brasília ↔ Holanda) */
+const tzBtn=document.getElementById('tzToggle'), tzName=document.getElementById('tzName');
+function setTzUI(){tzBtn.classList.toggle('on',tzKey==='NL'); if(tzName)tzName.textContent=TZS[tzKey].label;}
+tzBtn.onclick=()=>{
+  tzKey=tzKey==='NL'?'BRT':'NL';
+  try{localStorage.setItem('copa-tz',tzKey);}catch(e){}
+  selNum=null; detail.className='detail';
+  detail.textContent= onlyBR ? 'Mostrando jogos do Brasil — incluindo os possíveis no mata-mata (quanto mais apagado, menor a chance).' : 'Toque em um jogo para ver os times e a cidade.';
+  setTzUI(); recompute(); render();
+};
+
+/* abre na semana do dia atual (se estivermos dentro do período da Copa) */
+function initWinStart(){
+  const now=new Date();
+  const first=dObj(ALLDAYS[0]), last=dObj(ALLDAYS[ALLDAYS.length-1]);
+  if(now<first) return 0;
+  if(now>last) return ALLDAYS.length-1;
+  const key=Object.keys(MONTHS).find(k=>MONTHS[k]===now.getMonth());
+  const s=key?now.getDate()+'/'+key:null;
+  const idx=s?ALLDAYS.indexOf(s):-1;
+  return idx>=0?idx:0;
+}
+
 window.addEventListener('resize',()=>{render();});
-setZoom(zoomIdx);   // aplica a preferência salva e desenha
+winStart=initWinStart();   // começa no dia atual
+setTzUI(); recompute();    // aplica o fuso salvo e calcula horários/colunas
+setZoom(zoomIdx);          // aplica o zoom salvo e desenha
 </script>
 </body>
 </html>
