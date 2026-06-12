@@ -76,6 +76,7 @@
   .detail.live{color:var(--tx)}
   .detail .d-time{font-family:'Oswald';font-weight:700;color:var(--gold);font-size:15px}
   .detail .d-vs b{color:var(--tx)}
+  .detail .d-sc{font-family:'Oswald';font-weight:700;color:var(--gold);text-transform:uppercase;letter-spacing:.04em}
 
   /* AGENDA */
   .scroll{overflow-x:hidden;overflow-y:auto;margin-top:8px;border:1px solid var(--line);border-radius:14px;
@@ -134,6 +135,8 @@
   .bk.fin .bph{color:var(--final)}
   .bk .bm{font-size:9.5px;color:var(--tx);line-height:1.15;padding:0 1px}
   .bk .bc{font-size:8.5px;color:var(--dm)}
+  .bk .bsc{font-family:'Oswald';font-weight:700;font-size:14px;letter-spacing:.06em;color:var(--gold);line-height:1.05}
+  .bk.done{box-shadow:inset 0 0 0 1.5px rgba(245,200,74,.45)}
 
   footer{text-align:center;color:var(--dm);font-size:11px;margin:18px 0 40px;line-height:1.7}
   footer b{color:var(--grass)}
@@ -144,6 +147,7 @@
   .compact .bk .bt,.compact .bk .bc,.compact .bk .bm,.compact .bk .gfull{display:none}
   .compact .bk .bf{font-size:15px;letter-spacing:0;line-height:1.05;white-space:normal}
   .compact .bk .bgp{font-size:11px;font-weight:700}
+  .compact .bk .bsc{font-size:12.5px}
   .compact .bk .bph{font-size:10.5px}
   .compact .bk .bpct{font-size:10px}
   .compact .hlbl{font-size:9.5px;right:4px}
@@ -270,6 +274,9 @@ function stageOf(g){
 const BR_PROB={7:1,32:1,51:1,74:.096,75:.315,76:.411,77:.001,79:.043,89:.059,90:.181,91:.252,92:.027,97:.152,99:.162,101:.085,102:.09,103:.081,104:.094};
 const brProb=g=>BR_PROB[g.num]||0;
 
+/* placares de jogos já encerrados — nº do jogo → [gols casa, gols fora] */
+const SCORES={1:[2,0],2:[2,1],3:[1,1]};
+
 /* calendário contíguo alinhado ao domingo (do domingo da semana de abertura até a final) */
 const fmtDay=d=>d.getDate()+'/'+Object.keys(MONTHS).find(k=>MONTHS[k]===d.getMonth());
 const ALLDAYS=(()=>{const out=[];const d=dObj('11/Jun');d.setDate(d.getDate()-d.getDay());const end=dObj('19/Jul');
@@ -309,9 +316,12 @@ function showDetail(g){
   const[dd,mo]=g.locDate.split('/'); const wd=DOW[dObj(g.locDate).getDay()];
   const endM=g.dMin+durMin(g); const eh=String(Math.floor(endM/60)%24).padStart(2,'0')+':'+String(endM%60).padStart(2,'0');
   const p=brProb(g); const brNote=(onlyBR&&p>0&&p<1)?` · 🇧🇷 <b style="color:var(--gold)">${(p*100).toFixed(0)}%</b> de chance`:'';
+  const res=SCORES[g.num];
+  const mid=res?`<b class="d-sc">${res[0]} × ${res[1]}</b>`:'×';
+  const when=res?`<span class="d-time">${wd} ${dd}/${mo}</span> · <b class="d-sc">encerrado</b>`:`<span class="d-time">${g.disp}–${eh}</span> · ${wd} ${dd}/${mo}`;
   detail.className='detail live';
-  detail.innerHTML=`<span class="d-time">${g.disp}–${eh}</span> · ${wd} ${dd}/${mo} ·
-    <span class="d-vs">${fA}<b>${tA}</b> × <b>${tB}</b>${fB}</span> ·
+  detail.innerHTML=`${when} ·
+    <span class="d-vs">${fA}<b>${tA}</b> ${mid} <b>${tB}</b>${fB}</span> ·
     ${tag} · 📍 ${g.city} · <span style="opacity:.7">M${g.num}</span>${brNote}`;
 }
 
@@ -405,9 +415,9 @@ function render(){
       if(lane<0){lane=laneEnd.length;laneEnd.push(e);}else laneEnd[lane]=e; g._lane=lane;});
     const lanes=Math.max(1,laneEnd.length), laneW=colW/lanes;
     dg.forEach(g=>{
-      const isFin=g.phase==='FIN'; const p=brProb(g);
+      const isFin=g.phase==='FIN'; const p=brProb(g); const res=SCORES[g.num];
       const b=document.createElement('div');
-      b.className='bk '+(onlyBR?'br':(g.ko?(isFin?'fin':'ko'):'g'))+(g.num===selNum?' sel':'');
+      b.className='bk '+(onlyBR?'br':(g.ko?(isFin?'fin':'ko'):'g'))+(g.num===selNum?' sel':'')+(res?' done':'');
       b.style.left=px(di*colW+g._lane*laneW+2);
       b.style.width=px(laneW-4);
       b.style.top=px(mapMin(g.dMin)+1);
@@ -419,11 +429,13 @@ function render(){
       }else if(g.ko){
         b.innerHTML=`<span class="bph">${ph}</span><span class="bm">${shortSide(g.home)} × ${shortSide(g.away)}</span><span class="bc">📍 ${g.city}</span>`;
       }else{
-        b.innerHTML=`<span class="bt">${g.disp}</span><span class="bf">${fl(g.home.team)} ${fl(g.away.team)}</span><span class="bgp"><span class="gfull">Grupo </span>${g.group}</span>`;
+        const top=res?`<span class="bsc">${res[0]}–${res[1]}</span>`:`<span class="bt">${g.disp}</span>`;
+        b.innerHTML=`${top}<span class="bf">${fl(g.home.team)} ${fl(g.away.team)}</span><span class="bgp"><span class="gfull">Grupo </span>${g.group}</span>`;
       }
+      const vsT=res?`${res[0]} × ${res[1]}`:'×';
       b.title=g.ko
         ? `${g.disp} · ${g.home.label} × ${g.away.label} · ${PHLONG[g.phase]} · ${g.city}`+(p>0&&p<1?` · Brasil ${(p*100).toFixed(0)}%`:'')
-        : `${g.disp} · ${nm(g.home.team)} × ${nm(g.away.team)} · Grupo ${g.group} · ${g.city}`;
+        : `${g.disp} · ${nm(g.home.team)} ${vsT} ${nm(g.away.team)} · Grupo ${g.group} · ${g.city}`;
       b.addEventListener('click',()=>{plane.querySelectorAll('.bk.sel').forEach(x=>x.classList.remove('sel'));b.classList.add('sel');showDetail(g);});
       plane.appendChild(b);
     });
