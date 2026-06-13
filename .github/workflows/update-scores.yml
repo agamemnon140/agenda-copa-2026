@@ -1,0 +1,42 @@
+name: Atualizar placares da Copa
+
+# 04:10 BRT = 07:10 UTC, todo dia em junho e julho (cron do GitHub é UTC).
+# Também pode ser disparado manualmente em Actions › Run workflow.
+on:
+  schedule:
+    - cron: '10 7 * 6,7 *'
+  workflow_dispatch:
+
+# permite ao GITHUB_TOKEN dar push na main (sem o 403 do ambiente de routines)
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Regenerar fixtures
+        run: node scripts/gen-fixtures.js
+
+      - name: Buscar placares (Claude + web search)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/fetch-scores.js
+
+      - name: Commit e push (se houve mudança)
+        run: |
+          if git diff --quiet index.html; then
+            echo "Sem mudanças no index.html."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add index.html
+            git commit -m "Update scores (auto)"
+            git push
+          fi
