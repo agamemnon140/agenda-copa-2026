@@ -232,13 +232,18 @@ const dObj=d=>{const[dd,mo]=d.split('/');return new Date(2026,MONTHS[mo],+dd)};
 const PHL={R32:'16-AVOS',R16:'OITAVAS',QF:'QUARTAS',SF:'SEMIFINAIS','3rd':'3º LUGAR',FIN:'FINAL'};
 const PHS={R32:'16AV',R16:'OIT',QF:'QF',SF:'SF','3rd':'3º',FIN:'FINAL'};
 const PHLONG={R32:'16-avos de final',R16:'Oitavas de final',QF:'Quartas de final',SF:'Semifinal','3rd':'Disputa do 3º lugar',FIN:'FINAL'};
-function koSide(s){
+/* time real já classificado para uma vaga do mata-mata (preenchido pelo agente
+   a partir da 3ª rodada). nº do jogo → {h:'CodigoTime', a:'CodigoTime'};
+   os códigos são as mesmas chaves de PT/FL (ex.: 'Colombia', 'Brazil'). */
+const KO_TEAMS={};
+function koSide(s,team){
+  if(team)return{team,label:nm(team)};
   if(s.t==='pos')return{label:(s.p===1?'1º ':'2º ')+s.g};
   if(s.t==='3rd')return{label:'3º colocado'};
   if(s.t==='win')return{label:'Vencedor M'+s.m};
   return{label:'Perdedor M'+s.m};
 }
-const shortSide=s=>s.label.replace('Vencedor M','V').replace('Perdedor M','P').replace(' colocado','');
+const shortSide=s=>s.team?fl(s.team)+' '+nm(s.team):s.label.replace('Vencedor M','V').replace('Perdedor M','P').replace(' colocado','');
 
 /* jogos + rodada da fase de grupos */
 const games=[];
@@ -250,8 +255,8 @@ GS.forEach((g,i)=>{
     home:{team:groups[g[0]][g[1]]},away:{team:groups[g[0]][g[2]]},
     date:g[3],city:g[4],brt:GS_BRT[i]});
 });
-for(let mn=73;mn<=104;mn++){const sp=KO_SPEC[mn];
-  games.push({num:mn,ko:true,phase:sp.ph,home:koSide(sp.h),away:koSide(sp.a),
+for(let mn=73;mn<=104;mn++){const sp=KO_SPEC[mn];const kt=KO_TEAMS[mn]||{};
+  games.push({num:mn,ko:true,phase:sp.ph,home:koSide(sp.h,kt.h),away:koSide(sp.a,kt.a),
     date:KO_DATE[mn],city:KO_CITY[mn],brt:KO_BRT[mn]});}
 
 const toMin=t=>{const[h,m]=t.split(':').map(Number);return h*60+m};
@@ -311,7 +316,7 @@ const CSSVAR=k=>parseFloat(getComputedStyle(document.documentElement).getPropert
 function showDetail(g){
   selNum=g.num;
   const tA=g.ko?g.home.label:nm(g.home.team), tB=g.ko?g.away.label:nm(g.away.team);
-  const fA=g.ko?'':fl(g.home.team)+' ', fB=g.ko?'':' '+fl(g.away.team);
+  const fA=g.home.team?fl(g.home.team)+' ':'', fB=g.away.team?' '+fl(g.away.team):'';
   const tag=g.ko?PHLONG[g.phase]:'Grupo '+g.group;
   const[dd,mo]=g.locDate.split('/'); const wd=DOW[dObj(g.locDate).getDay()];
   const endM=g.dMin+durMin(g); const eh=String(Math.floor(endM/60)%24).padStart(2,'0')+':'+String(endM%60).padStart(2,'0');
