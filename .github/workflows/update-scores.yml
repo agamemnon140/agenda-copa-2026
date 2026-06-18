@@ -29,6 +29,11 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node scripts/fetch-scores.js
 
+      - name: Preencher times do mata-mata já classificados (Claude + web search)
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: node scripts/fetch-ko-teams.js
+
       - name: Commit e push (se houve mudança)
         run: |
           if git diff --quiet index.html; then
