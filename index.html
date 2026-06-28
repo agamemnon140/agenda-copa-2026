@@ -235,7 +235,7 @@ const PHLONG={R32:'16-avos de final',R16:'Oitavas de final',QF:'Quartas de final
 /* time real já classificado para uma vaga do mata-mata (preenchido pelo agente
    a partir da 3ª rodada). nº do jogo → {h:'CodigoTime', a:'CodigoTime'};
    os códigos são as mesmas chaves de PT/FL (ex.: 'Colombia', 'Brazil'). */
-const KO_TEAMS={};
+const KO_TEAMS={73:{h:'South Africa',a:'Canada'},74:{h:'Germany',a:'Paraguay'},75:{h:'Netherlands',a:'Morocco'},76:{h:'Brazil',a:'Japan'},77:{h:'France',a:'Sweden'},78:{h:'Ivory Coast',a:'Norway'},79:{h:'Mexico',a:'Ecuador'},80:{h:'England',a:'DR Congo'},81:{h:'USA',a:'Bosnia and Herzegovina'},82:{h:'Belgium',a:'Senegal'},83:{h:'Portugal',a:'Croatia'},84:{h:'Spain',a:'Austria'},85:{h:'Switzerland',a:'Algeria'},86:{h:'Argentina',a:'Cape Verde'},87:{h:'Colombia',a:'Ghana'},88:{h:'Australia',a:'Egypt'}};
 function koSide(s,team){
   if(team)return{team,label:nm(team)};
   if(s.t==='pos')return{label:(s.p===1?'1º ':'2º ')+s.g};
@@ -280,7 +280,7 @@ const BR_PROB={7:1,32:1,51:1,74:.096,75:.315,76:.411,77:.001,79:.043,89:.059,90:
 const brProb=g=>BR_PROB[g.num]||0;
 
 /* placares de jogos já encerrados — nº do jogo → [gols casa, gols fora] */
-const SCORES={1:[2,0],2:[2,1],3:[1,1],4:[4,1],5:[2,0],6:[1,1],7:[1,1],8:[0,1],9:[7,1],10:[2,2],11:[1,0],12:[5,1],13:[0,0],14:[1,1],15:[1,1],16:[2,2],17:[3,0],18:[3,1],19:[1,4],20:[3,1],21:[1,1],22:[4,2],23:[1,0],24:[1,3],25:[1,1],26:[4,1],27:[6,0],28:[1,0],29:[0,1],30:[2,0],31:[0,1],32:[3,0],33:[5,1],34:[2,1],35:[0,0],36:[0,4],37:[4,0],38:[0,0],39:[2,2],40:[1,3],41:[2,0],42:[3,0],43:[3,2],44:[1,2]};
+const SCORES={1:[2,0],2:[2,1],3:[1,1],4:[4,1],5:[2,0],6:[1,1],7:[1,1],8:[0,1],9:[7,1],10:[2,2],11:[1,0],12:[5,1],13:[0,0],14:[1,1],15:[1,1],16:[2,2],17:[3,0],18:[3,1],19:[1,4],20:[3,1],21:[1,1],22:[4,2],23:[1,0],24:[1,3],25:[1,1],26:[4,1],27:[6,0],28:[1,0],29:[0,1],30:[2,0],31:[0,1],32:[3,0],33:[5,1],34:[2,1],35:[0,0],36:[0,4],37:[4,0],38:[0,0],39:[2,2],40:[1,3],41:[2,0],42:[3,0],43:[3,2],44:[1,2],45:[5,0],46:[0,0],47:[0,1],48:[1,0],49:[2,1],50:[3,1],51:[0,3],52:[4,2],53:[0,3],54:[1,0],55:[0,2],56:[2,1],57:[1,1],58:[1,3],59:[3,2],60:[0,0],61:[1,4],62:[5,0],63:[0,0],64:[0,1],65:[1,5],66:[1,1],67:[0,2],68:[2,1],69:[0,0],70:[3,1],71:[1,3],72:[3,3]};
 
 /* calendário contíguo alinhado ao domingo (do domingo da semana de abertura até a final) */
 const fmtDay=d=>d.getDate()+'/'+Object.keys(MONTHS).find(k=>MONTHS[k]===d.getMonth());
